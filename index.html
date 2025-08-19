@@ -1,203 +1,187 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Punchlist Management</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Punchlist App</title>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #74ebd5, #ACB6E5);
-      margin: 0; padding: 0;
-      min-height: 100vh;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: flex-start;
+      font-family: Arial, sans-serif;
+      background: #f9fafb;
+      margin: 0;
+      padding: 20px;
     }
     h1 {
-      margin-top: 20px;
-      font-size: 28px;
-      color: #fff;
-      text-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+      text-align: center;
+      color: #2c3e50;
     }
     .container {
-      background: #fff;
-      padding: 25px;
-      margin-top: 20px;
+      max-width: 800px;
+      margin: auto;
+    }
+    form {
+      background: white;
+      padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-      width: 95%; max-width: 700px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
     }
-    label {
-      font-weight: 600;
-      margin-bottom: 5px;
-      display: block;
-      color: #333;
-    }
-    input, textarea, select {
+    form input, form select, form textarea, form button {
       width: 100%;
+      margin-bottom: 12px;
       padding: 10px;
-      margin-bottom: 15px;
       border: 1px solid #ccc;
       border-radius: 8px;
-      font-size: 14px;
     }
-    button {
+    form button {
       background: #4CAF50;
-      color: #fff;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
+      color: white;
+      font-weight: bold;
       cursor: pointer;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: #45a049;
     }
     table {
       width: 100%;
-      margin-top: 25px;
       border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
-    th, td {
+    table th, table td {
+      padding: 12px;
       border: 1px solid #ddd;
-      padding: 10px;
-      text-align: center;
+      text-align: left;
     }
-    th {
+    table th {
       background: #4CAF50;
-      color: #fff;
+      color: white;
     }
-    .status-onprocess {
-      color: orange; font-weight: bold;
-    }
-    .status-done {
-      color: green; font-weight: bold;
-    }
-    .evidence-img {
-      max-width: 100px; border-radius: 6px;
+    .evidence-link {
+      color: #3498db;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <h1>Punchlist Tracker</h1>
-
   <div class="container">
+    <h1>Punchlist App</h1>
+
     <form id="punchlistForm">
-      <label>Description</label>
-      <textarea id="description" required></textarea>
-
-      <label>Requested By</label>
-      <input type="text" id="requested_by" required />
-
-      <label>Request Date</label>
+      <input type="text" id="description" placeholder="Deskripsi" required />
+      <input type="text" id="requester" placeholder="Requester" required />
       <input type="date" id="request_date" required />
-
-      <label>Assigned To</label>
-      <input type="text" id="assigned_to" required />
-
-      <label>Upload Evidence (Image)</label>
+      <input type="text" id="assigned_to" placeholder="Assigned To" required />
       <input type="file" id="evidence" accept="image/*" />
 
-      <button type="submit">Submit</button>
+      <button type="submit">Tambah Punchlist</button>
     </form>
 
-    <table id="punchlistTable">
+    <table>
       <thead>
         <tr>
-          <th>Description</th>
-          <th>Requested By</th>
-          <th>Date</th>
+          <th>ID</th>
+          <th>Deskripsi</th>
+          <th>Requester</th>
+          <th>Tanggal Request</th>
           <th>Assigned To</th>
           <th>Status</th>
           <th>Evidence</th>
-          <th>Action</th>
+          <th>Created At</th>
         </tr>
       </thead>
-      <tbody></tbody>
+      <tbody id="punchlistTable"></tbody>
     </table>
   </div>
 
   <script>
-    // Ganti dengan config dari Supabase Project Settings
-    const SUPABASE_URL = "https://ahhmhdwukqfquwodeunc.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoaG1oZHd1a3FmcXV3b2RldW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NzQxODQsImV4cCI6MjA3MTE1MDE4NH0.PlBMneWa9STztSgb3VeqlTP6gBvFyW-wc43uFAQmtdA";
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const form = document.getElementById('punchlistForm');
-    const tableBody = document.querySelector('#punchlistTable tbody');
+    const form = document.getElementById("punchlistForm");
+    const tableBody = document.getElementById("punchlistTable");
 
-    async function fetchPunchlist() {
-      const { data, error } = await supabase.from("punchlist").select("*").order("id", { ascending: false });
+    // Ambil data awal
+    async function loadPunchlists() {
+      const { data, error } = await supabaseClient
+        .from("punchlist")
+        .select("*")
+        .order("created_at", { ascending: false });
+
       if (error) {
-        console.error(error);
+        console.error("Load error:", error.message);
         return;
       }
+
       tableBody.innerHTML = "";
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.description}</td>
-          <td>${row.requested_by}</td>
-          <td>${row.request_date}</td>
-          <td>${row.assigned_to}</td>
-          <td class="${row.status === 'done' ? 'status-done' : 'status-onprocess'}">${row.status}</td>
-          <td>${row.evidence_url ? `<img src="${row.evidence_url}" class="evidence-img"/>` : '-'}</td>
-          <td>${row.status === 'on process' ? `<button onclick="markDone(${row.id})">Mark Done</button>` : ''}</td>
-        `;
-        tableBody.appendChild(tr);
+      data.forEach(item => {
+        const row = `<tr>
+          <td>${item.id}</td>
+          <td>${item.description}</td>
+          <td>${item.requester}</td>
+          <td>${item.request_date || ""}</td>
+          <td>${item.assigned_to}</td>
+          <td>${item.status}</td>
+          <td>${item.evidence_url ? `<a class="evidence-link" href="${item.evidence_url}" target="_blank">Lihat</a>` : "-"}</td>
+          <td>${item.created_at}</td>
+        </tr>`;
+        tableBody.innerHTML += row;
       });
     }
 
-    async function markDone(id) {
-      const { error } = await supabase.from("punchlist").update({ status: "done" }).eq("id", id);
-      if (error) console.error(error);
-      fetchPunchlist();
-    }
-
+    // Submit form
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+
       const description = document.getElementById("description").value;
-      const requested_by = document.getElementById("requested_by").value;
+      const requester = document.getElementById("requester").value;
       const request_date = document.getElementById("request_date").value;
       const assigned_to = document.getElementById("assigned_to").value;
-      const evidenceFile = document.getElementById("evidence").files[0];
+      const file = document.getElementById("evidence").files[0];
 
-      let evidence_url = null;
+      let evidenceUrl = null;
 
-      // Upload image jika ada
-      if (evidenceFile) {
-        const fileName = Date.now() + "-" + evidenceFile.name;
-        const { data: storageData, error: storageError } = await supabase
-          .storage.from("evidence") // bucket harus ada
-          .upload(fileName, evidenceFile);
+      if (file) {
+        const filePath = `punchlist/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabaseClient.storage
+          .from("evidence")
+          .upload(filePath, file);
 
-        if (storageError) {
-          console.error("Upload failed:", storageError.message);
-        } else {
-          evidence_url = `${SUPABASE_URL}/storage/v1/object/public/evidence/${fileName}`;
+        if (uploadError) {
+          alert("Upload gagal: " + uploadError.message);
+          return;
         }
+
+        const { data: publicUrlData } = supabaseClient.storage
+          .from("evidence")
+          .getPublicUrl(filePath);
+
+        evidenceUrl = publicUrlData.publicUrl;
       }
 
-      const { error } = await supabase.from("punchlist").insert([{
-        description,
-        requested_by,
-        request_date,
-        assigned_to,
-        status: "on process",
-        evidence_url
-      }]);
+      const { error: insertError } = await supabaseClient
+        .from("punchlist")
+        .insert([{
+          description,
+          requester,
+          request_date,
+          assigned_to,
+          status: "on process",
+          evidence_url: evidenceUrl
+        }]);
 
-      if (error) {
-        console.error(error);
-      } else {
-        form.reset();
-        fetchPunchlist();
+      if (insertError) {
+        alert("Insert gagal: " + insertError.message);
+        console.error(insertError);
+        return;
       }
+
+      form.reset();
+      loadPunchlists();
     });
 
-    fetchPunchlist();
+    loadPunchlists();
   </script>
 </body>
 </html>
