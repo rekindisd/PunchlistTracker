@@ -1,121 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Punchlist Tracker</title>
+
+  <!-- Tailwind (CDN) -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- Supabase JS v2 (CDN) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center p-8">
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-gradient-to-r from-blue-600 to-cyan-500 text-white">
+    <div class="max-w-6xl mx-auto px-6 py-6">
+      <h1 class="text-3xl font-bold flex items-center">
+        🚀 Punchlist Tracker
+      </h1>
+      <p class="opacity-90">Submit requests, upload evidence, track status.</p>
+    </div>
+  </header>
 
-  <h1 class="text-3xl font-bold text-blue-600 mb-6">Punchlist Tracker</h1>
+  <main class="max-w-6xl mx-auto px-6 py-8">
+    <!-- Form -->
+    <section class="bg-white rounded-2xl shadow p-6 mb-8">
+      <h2 class="text-xl font-semibold mb-4">Add New Request</h2>
+      <form id="punchlist-form" class="grid md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1">Description</label>
+          <textarea id="description" class="w-full border rounded-lg p-2" placeholder="Describe the issue or request..." required></textarea>
+        </div>
 
-  <!-- Form Input -->
-  <form id="punchlist-form" class="bg-white shadow-lg rounded-xl p-6 w-full max-w-lg space-y-4">
-    <input type="text" id="description" placeholder="Description" required class="w-full border rounded-lg p-2" />
-    <input type="text" id="requester" placeholder="Requester Name" required class="w-full border rounded-lg p-2" />
-    <input type="date" id="request_date" required class="w-full border rounded-lg p-2" />
-    <input type="text" id="assigned_to" placeholder="Assigned To" required class="w-full border rounded-lg p-2" />
-    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg w-full hover:bg-blue-700">
-      Submit Punchlist
-    </button>
-  </form>
+        <div>
+          <label class="block text-sm font-medium mb-1">Requested By</label>
+          <input id="requester" type="text" class="w-full border rounded-lg p-2" placeholder="Requester name" required />
+        </div>
 
-  <!-- List -->
-  <div class="mt-8 w-full max-w-3xl">
-    <h2 class="text-2xl font-semibold mb-4">Punchlist Items</h2>
-    <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
-      <thead class="bg-gray-200">
-        <tr>
-          <th class="py-2 px-4">ID</th>
-          <th class="py-2 px-4">Description</th>
-          <th class="py-2 px-4">Requester</th>
-          <th class="py-2 px-4">Date</th>
-          <th class="py-2 px-4">Assigned To</th>
-          <th class="py-2 px-4">Status</th>
-          <th class="py-2 px-4">Action</th>
-        </tr>
-      </thead>
-      <tbody id="punchlist-table"></tbody>
-    </table>
-  </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Request Date</label>
+          <input id="request_date" type="date" class="w-full border rounded-lg p-2" required />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Assigned To</label>
+          <input id="assigned_to" type="text" class="w-full border rounded-lg p-2" placeholder="Who will fix this?" required />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Evidence (Image)</label>
+          <input id="evidence" type="file" accept="image/*" class="w-full border rounded-lg p-2 bg-white" />
+          <p class="text-xs text-gray-500 mt-1">Optional. JPG/PNG/WebP. Max ~5–10 MB (per your bucket limits).</p>
+        </div>
+
+        <div class="md:col-span-2 flex items-center gap-3">
+          <button type="submit" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700">
+            Submit Request
+          </button>
+          <span id="form-status" class="text-sm text-gray-600"></span>
+        </div>
+      </form>
+    </section>
+
+    <!-- Table -->
+    <section class="bg-white rounded-2xl shadow p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold">Punchlist Items</h2>
+        <button id="refresh-btn" class="text-sm px-3 py-1 rounded-lg border hover:bg-gray-100">Refresh</button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-100 text-gray-700">
+            <tr>
+              <th class="text-left p-3">ID</th>
+              <th class="text-left p-3">Description</th>
+              <th class="text-left p-3">Requester</th>
+              <th class="text-left p-3">Date</th>
+              <th class="text-left p-3">Assigned</th>
+              <th class="text-left p-3">Evidence</th>
+              <th class="text-left p-3">Status</th>
+              <th class="text-left p-3">Action</th>
+            </tr>
+          </thead>
+          <tbody id="punchlist-table"></tbody>
+        </table>
+      </div>
+
+      <div id="empty-state" class="hidden text-center text-gray-500 py-8">
+        No items yet. Be the first to submit a punchlist ✨
+      </div>
+    </section>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-6 py-8 text-xs text-gray-500">
+    Tip: Make sure your Supabase Storage bucket is <b>Public</b>, or implement signed URLs.
+  </footer>
 
   <script>
-    // Ganti dengan project Supabase kamu
-    const SUPABASE_URL = "https://ahhmhdwukqfquwodeunc.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoaG1oZHd1a3FmcXV3b2RldW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NzQxODQsImV4cCI6MjA3MTE1MDE4NH0.PlBMneWa9STztSgb3VeqlTP6gBvFyW-wc43uFAQmtdA";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // ===========================
+    // 🔧 CONFIG — CHANGE THESE
+    // ===========================
+    const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co"; // <-- replace
+    const SUPABASE_KEY = "YOUR_ANON_PUBLIC_KEY";             // <-- replace
+    const BUCKET_NAME  = "punchlist-evidence";               // <-- replace (your Storage bucket)
 
-    const form = document.getElementById('punchlist-form');
-    const tableBody = document.getElementById('punchlist-table');
+    // Init client
+    const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Submit Form
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const description = document.getElementById('description').value;
-      const requester = document.getElementById('requester').value;
-      const request_date = document.getElementById('request_date').value;
-      const assigned_to = document.getElementById('assigned_to').value;
+    const form = document.getElementById("punchlist-form");
+    const tableBody = document.getElementById("punchlist-table");
+    const formStatus = document.getElementById("form-status");
+    const refreshBtn = document.getElementById("refresh-btn");
+    const emptyState = document.getElementById("empty-state");
 
-      const { data, error } = await supabase
-        .from('punchlist')
-        .insert([{ description, requester, request_date, assigned_to, status: 'On Process' }]);
+    // Helper: unique path for file
+    function uniquePath(originalName) {
+      const safeName = originalName.replace(/\s+/g, "_");
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const rand = (crypto && crypto.randomUUID) ? crypto.randomUUID() : Math.random().toString(36).slice(2);
+      return `evidence/${stamp}_${rand}_${safeName}`;
+    }
+
+    // Upload file to Storage and return public URL (or null)
+    async function uploadEvidenceIfAny(file) {
+      if (!file) return null;
+
+      const path = uniquePath(file.name);
+
+      const { data, error } = await client.storage
+        .from(BUCKET_NAME)
+        .upload(path, file, {
+          // contentType will be inferred from the File by supabase-js
+          upsert: false
+        });
 
       if (error) {
-        alert("Error: " + error.message);
-      } else {
-        form.reset();
-        loadPunchlist();
+        console.error("Upload error:", error);
+        throw new Error(error.message || "Failed to upload evidence");
       }
-    });
 
-    // Load Data
-    async function loadPunchlist() {
-      const { data, error } = await supabase
-        .from('punchlist')
-        .select('*')
-        .order('id', { ascending: false });
+      const { data: pub } = client.storage.from(BUCKET_NAME).getPublicUrl(path);
+      return pub?.publicUrl ?? null;
+    }
 
-      if (error) {
-        console.error(error);
+    // Insert new punchlist row
+    async function addPunchlist(e) {
+      e.preventDefault();
+      formStatus.textContent = "Submitting...";
+      formStatus.classList.remove("text-green-600");
+      formStatus.classList.add("text-gray-600");
+
+      const description = document.getElementById("description").value.trim();
+      const requester   = document.getElementById("requester").value.trim();
+      const requestDate = document.getElementById("request_date").value;
+      const assignedTo  = document.getElementById("assigned_to").value.trim();
+      const fileInput   = document.getElementById("evidence");
+      const file        = fileInput.files[0];
+
+      if (!description || !requester || !requestDate || !assignedTo) {
+        formStatus.textContent = "Please fill in all required fields.";
         return;
       }
 
-      tableBody.innerHTML = "";
-      data.forEach(item => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td class="border px-4 py-2">${item.id}</td>
-          <td class="border px-4 py-2">${item.description}</td>
-          <td class="border px-4 py-2">${item.requester}</td>
-          <td class="border px-4 py-2">${item.request_date}</td>
-          <td class="border px-4 py-2">${item.assigned_to}</td>
-          <td class="border px-4 py-2">${item.status}</td>
-          <td class="border px-4 py-2">
-            ${item.status === 'On Process' ? 
-              `<button onclick="markDone(${item.id})" class="bg-green-600 text-white px-2 py-1 rounded">Mark Done</button>` 
-              : '✅ Done'}
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
-    }
+      try {
+        // 1) upload evidence if provided
+        let evidenceUrl = null;
+        if (file) {
+          evidenceUrl = await uploadEvidenceIfAny(file);
+        }
 
-    // Mark Done
-    async function markDone(id) {
-      const { error } = await supabase
-        .from('punchlist')
-        .update({ status: 'Done' })
-        .eq('id', id);
+        // 2) insert DB row
+        const { error } = await client
+          .from("punchlist")
+          .insert([{
+            description: description,
+            requester: requester,
+            request_date: requestDate,
+            assigned_to: assignedTo,
+            status: "On Process",
+            evidence_url: evidenceUrl
+          }]);
 
-      if (error) {
-        alert("Error: " + error.message);
-      } else {
-        loadPunchlist();
+        if (error) throw error;
+
+        // success
+        form.reset();
+        formStatus.textContent = "✅ Submitted!";
+        formStatus.classList.remove("text-gray-600");
+        formStatus.classList.add("text-green-600");
+        await loadPunchlist();
+      } catch (err) {
+        console.error(err);
+        formStatus.textContent = "❌ " + (err.message || "Submit failed");
+        formStatus.classList.remove("text-green-600");
+        formStatus.classList.add("text-red-600");
+      } finally {
+        // reset status text after a while
+        setTimeout(() => { formStatus.textContent = ""; }, 2500);
       }
     }
 
+    // Update status to Done
+    async function markDone(id) {
+      const btn = document.getElementById(`btn-done-${id}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Updating...";
+      }
+
+      const { error } = await client.from("punchlist").update({ status: "Done" }).eq("id", id);
+      if (error) {
+        alert("Update failed: " + error.message);
+      }
+      await loadPunchlist();
+    }
+
+    // Render rows
+    function renderTable(data) {
+      tableBody.innerHTML = "";
+      if (!data || data.length === 0) {
+        emptyState.classList.remove("hidden");
+        return;
+      }
+      emptyState.classList.add("hidden");
+
+      data.forEach(item => {
+        const tr = document.createElement("tr");
+        tr.className = "border-b";
+
+        const statusBadge = item.status === "On Process"
+          ? `<span class="px-2 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">On Process</span>`
+          : `<span class="px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">Done</span>`;
+
+        const evidenceCell = item.evidence_url
+          ? `<a href="${item.evidence_url}" target="_blank" class="underline text-blue-600">View</a>
+             <div class="mt-1">
+               <img src="${item.evidence_url}" alt="evidence" class="h-12 w-12 object-cover rounded border" />
+             </div>`
+          : `<span class="text-gray-400">—</span>`;
+
+        tr.innerHTML = `
+          <td class="p-3 align-top">${item.id}</td>
+          <td class="p-3 align-top max-w-sm">
+            <div class="font-medium">${escapeHtml(item.description || "")}</div>
+          </td>
+          <td class="p-3 align-top">${escapeHtml(item.requester || "")}</td>
+          <td class="p-3 align-top">${item.request_date || ""}</td>
+          <td class="p-3 align-top">${escapeHtml(item.assigned_to || "")}</td>
+          <td class="p-3 align-top">${evidenceCell}</td>
+          <td class="p-3 align-top">${statusBadge}</td>
+          <td class="p-3 align-top">
+            ${
+              item.status === "On Process"
+                ? `<button id="btn-done-${item.id}" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-xs" onclick="markDone(${item.id})">Mark Done</button>`
+                : `<span class="text-gray-400">—</span>`
+            }
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+    }
+
+    // Simple escape to avoid XSS in text fields
+    function escapeHtml(str) {
+      return (str || "").replace(/[&<>"']/g, m => (
+        { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]
+      ));
+    }
+
+    // Load data
+    async function loadPunchlist() {
+      const { data, error } = await client
+        .from("punchlist")
+        .select("*")
+        .order("id", { ascending: false });
+
+      if (error) {
+        console.error(error);
+        tableBody.innerHTML = `<tr><td colspan="8" class="p-6 text-red-600">Failed to load data: ${error.message}</td></tr>`;
+        emptyState.classList.add("hidden");
+        return;
+      }
+
+      renderTable(data);
+    }
+
+    // Events
+    form.addEventListener("submit", addPunchlist);
+    refreshBtn.addEventListener("click", loadPunchlist);
+
+    // Initial
     loadPunchlist();
   </script>
 </body>
