@@ -11,7 +11,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 500px;
+      max-width: 600px;
       margin: auto;
       background: white;
       padding: 20px;
@@ -19,9 +19,10 @@
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     h2 { text-align: center; }
-    input, button {
+    label { font-weight: bold; margin-top: 10px; display: block; }
+    input, textarea, button {
       width: 100%;
-      margin: 10px 0;
+      margin: 8px 0;
       padding: 10px;
       border-radius: 5px;
       border: 1px solid #ccc;
@@ -42,8 +43,17 @@
   <div class="container">
     <h2>Form Punchlist</h2>
     <form id="punchlistForm">
+      <label>Request By:</label>
+      <input type="text" id="request_by" placeholder="Nama pengaju" required />
+
+      <label>Tanggal:</label>
+      <input type="date" id="request_date" required />
+
       <label>Judul Request:</label>
-      <input type="text" id="title" placeholder="Masukkan judul request" required />
+      <input type="text" id="title" placeholder="Judul punchlist" required />
+
+      <label>Deskripsi:</label>
+      <textarea id="description" placeholder="Tuliskan detail deskripsi..." required></textarea>
 
       <label>Bukti Foto:</label>
       <input type="file" id="evidence" accept="image/*" required />
@@ -64,11 +74,14 @@
     document.getElementById("punchlistForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
+      const request_by = document.getElementById("request_by").value.trim();
+      const request_date = document.getElementById("request_date").value;
       const title = document.getElementById("title").value.trim();
+      const description = document.getElementById("description").value.trim();
       const file = document.getElementById("evidence").files[0];
 
-      if (!title || !file) {
-        alert("Judul dan file wajib diisi!");
+      if (!request_by || !request_date || !title || !description || !file) {
+        alert("Semua field wajib diisi!");
         return;
       }
 
@@ -94,7 +107,13 @@
       const { error: insertError } = await supabaseClient
         .from("punchlist")
         .insert([
-          { title: title, evidence_url: publicUrlData.publicUrl }
+          { 
+            request_by: request_by, 
+            request_date: request_date, 
+            title: title, 
+            description: description, 
+            evidence_url: publicUrlData.publicUrl 
+          }
         ]);
 
       if (insertError) {
@@ -104,7 +123,7 @@
       }
 
       document.getElementById("result").innerHTML =
-        `✅ Berhasil! File diupload: <a href="${publicUrlData.publicUrl}" target="_blank">Lihat</a>`;
+        `✅ Data berhasil disimpan! <br/>Bukti: <a href="${publicUrlData.publicUrl}" target="_blank">Lihat Foto</a>`;
 
       // Reset form
       document.getElementById("punchlistForm").reset();
