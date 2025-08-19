@@ -25,23 +25,29 @@
       padding: 10px;
       border-radius: 5px;
       border: 1px solid #ccc;
+      font-size: 14px;
     }
     button {
       background: #4CAF50;
       color: white;
       border: none;
       cursor: pointer;
+      font-weight: bold;
     }
     button:hover { background: #45a049; }
-    #result { margin-top: 15px; }
+    #result { margin-top: 15px; font-size: 14px; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Form Punchlist</h2>
     <form id="punchlistForm">
-      <input type="text" id="title" placeholder="Judul Request" required />
+      <label>Judul Request:</label>
+      <input type="text" id="title" placeholder="Masukkan judul request" required />
+
+      <label>Bukti Foto:</label>
       <input type="file" id="evidence" accept="image/*" required />
+
       <button type="submit">Submit</button>
     </form>
     <div id="result"></div>
@@ -50,7 +56,7 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    // 🔑 Ganti dengan URL & anon key project kamu
+    // 🔑 Ganti dengan project Supabase kamu
     const SUPABASE_URL = "https://ahhmhdwukqfquwodeunc.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoaG1oZHd1a3FmcXV3b2RldW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NzQxODQsImV4cCI6MjA3MTE1MDE4NH0.PlBMneWa9STztSgb3VeqlTP6gBvFyW-wc43uFAQmtdA"; 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -58,23 +64,23 @@
     document.getElementById("punchlistForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const title = document.getElementById("title").value;
+      const title = document.getElementById("title").value.trim();
       const file = document.getElementById("evidence").files[0];
 
-      if (!file) {
-        alert("Harus pilih file!");
+      if (!title || !file) {
+        alert("Judul dan file wajib diisi!");
         return;
       }
 
       const fileName = `${Date.now()}-${file.name}`;
 
-      // Upload file ke bucket "evidence"
-      const { data, error } = await supabaseClient.storage
+      // Upload file ke bucket storage
+      const { data: uploadData, error: uploadError } = await supabaseClient.storage
         .from("evidence")
         .upload(fileName, file);
 
-      if (error) {
-        console.error("Upload error:", error);
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
         document.getElementById("result").innerText = "❌ Upload gagal!";
         return;
       }
@@ -84,7 +90,7 @@
         .from("evidence")
         .getPublicUrl(fileName);
 
-      // Simpan metadata ke tabel punchlist
+      // Insert metadata ke tabel punchlist
       const { error: insertError } = await supabaseClient
         .from("punchlist")
         .insert([
@@ -99,6 +105,9 @@
 
       document.getElementById("result").innerHTML =
         `✅ Berhasil! File diupload: <a href="${publicUrlData.publicUrl}" target="_blank">Lihat</a>`;
+
+      // Reset form
+      document.getElementById("punchlistForm").reset();
     });
   </script>
 </body>
