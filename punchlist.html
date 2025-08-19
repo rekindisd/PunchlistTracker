@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Punchlist Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-8">
+
+  <h1 class="text-3xl font-bold text-blue-600 mb-6">Punchlist Tracker</h1>
+
+  <!-- Form Input -->
+  <form id="punchlist-form" class="bg-white shadow-lg rounded-xl p-6 w-full max-w-lg space-y-4">
+    <input type="text" id="description" placeholder="Description" required class="w-full border rounded-lg p-2" />
+    <input type="text" id="requester" placeholder="Requester Name" required class="w-full border rounded-lg p-2" />
+    <input type="date" id="request_date" required class="w-full border rounded-lg p-2" />
+    <input type="text" id="assigned_to" placeholder="Assigned To" required class="w-full border rounded-lg p-2" />
+    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg w-full hover:bg-blue-700">
+      Submit Punchlist
+    </button>
+  </form>
+
+  <!-- List -->
+  <div class="mt-8 w-full max-w-3xl">
+    <h2 class="text-2xl font-semibold mb-4">Punchlist Items</h2>
+    <table class="w-full bg-white shadow-md rounded-lg overflow-hidden">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="py-2 px-4">ID</th>
+          <th class="py-2 px-4">Description</th>
+          <th class="py-2 px-4">Requester</th>
+          <th class="py-2 px-4">Date</th>
+          <th class="py-2 px-4">Assigned To</th>
+          <th class="py-2 px-4">Status</th>
+          <th class="py-2 px-4">Action</th>
+        </tr>
+      </thead>
+      <tbody id="punchlist-table"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // Ganti dengan project Supabase kamu
+    const SUPABASE_URL = "https://ahhmhdwukqfquwodeunc.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoaG1oZHd1a3FmcXV3b2RldW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NzQxODQsImV4cCI6MjA3MTE1MDE4NH0.PlBMneWa9STztSgb3VeqlTP6gBvFyW-wc43uFAQmtdA";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const form = document.getElementById('punchlist-form');
+    const tableBody = document.getElementById('punchlist-table');
+
+    // Submit Form
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const description = document.getElementById('description').value;
+      const requester = document.getElementById('requester').value;
+      const request_date = document.getElementById('request_date').value;
+      const assigned_to = document.getElementById('assigned_to').value;
+
+      const { data, error } = await supabase
+        .from('punchlist')
+        .insert([{ description, requester, request_date, assigned_to, status: 'On Process' }]);
+
+      if (error) {
+        alert("Error: " + error.message);
+      } else {
+        form.reset();
+        loadPunchlist();
+      }
+    });
+
+    // Load Data
+    async function loadPunchlist() {
+      const { data, error } = await supabase
+        .from('punchlist')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      tableBody.innerHTML = "";
+      data.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="border px-4 py-2">${item.id}</td>
+          <td class="border px-4 py-2">${item.description}</td>
+          <td class="border px-4 py-2">${item.requester}</td>
+          <td class="border px-4 py-2">${item.request_date}</td>
+          <td class="border px-4 py-2">${item.assigned_to}</td>
+          <td class="border px-4 py-2">${item.status}</td>
+          <td class="border px-4 py-2">
+            ${item.status === 'On Process' ? 
+              `<button onclick="markDone(${item.id})" class="bg-green-600 text-white px-2 py-1 rounded">Mark Done</button>` 
+              : '✅ Done'}
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Mark Done
+    async function markDone(id) {
+      const { error } = await supabase
+        .from('punchlist')
+        .update({ status: 'Done' })
+        .eq('id', id);
+
+      if (error) {
+        alert("Error: " + error.message);
+      } else {
+        loadPunchlist();
+      }
+    }
+
+    loadPunchlist();
+  </script>
+</body>
+</html>
