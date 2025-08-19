@@ -1,210 +1,835 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Punchlist Form</title>
+  <title>Punchlist Tracker</title>
   <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: "Segoe UI", sans-serif;
-      background: #f9fafb;
+    * {
       margin: 0;
-      padding: 20px;
+      padding: 0;
+      box-sizing: border-box;
     }
+    
+    body {
+      font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #0ea5e9 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+      pointer-events: none;
+      z-index: -1;
+    }
+    
     .container {
-      max-width: 1100px;
+      max-width: 1200px;
       margin: auto;
     }
+    
     h1 {
       text-align: center;
+      color: white;
+      margin-bottom: 30px;
+      font-size: 2.5rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .form-container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 35px;
+      border-radius: 25px;
+      box-shadow: 
+        0 20px 40px rgba(0,0,0,0.1),
+        0 15px 12px rgba(0,0,0,0.05),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+      margin-bottom: 30px;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+    
+    .form-container:hover {
+      transform: translateY(-5px);
+      box-shadow: 
+        0 25px 50px rgba(0,0,0,0.15),
+        0 20px 20px rgba(0,0,0,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+    
+    .form-title {
       color: #2c3e50;
       margin-bottom: 20px;
+      font-size: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    form {
-      background: #ffffff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-      margin-bottom: 30px;
+    
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
     }
-    .form-group {
-      margin-bottom: 15px;
+    
+    .input-group {
+      display: flex;
+      flex-direction: column;
     }
-    label {
-      font-weight: bold;
-      display: block;
+    
+    .input-group label {
+      color: #555;
       margin-bottom: 5px;
+      font-weight: 600;
     }
-    input, select, textarea {
+    
+    .input-group input, .input-group select, .input-group textarea {
+      padding: 15px 20px;
+      border: 2px solid #e1e8ed;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      background: rgba(255,255,255,0.8);
+      backdrop-filter: blur(10px);
+    }
+    
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+      outline: none;
+      border-color: #0ea5e9;
+      box-shadow: 
+        0 0 0 4px rgba(14, 165, 233, 0.15),
+        0 8px 20px rgba(14, 165, 233, 0.1);
+      background: white;
+      transform: translateY(-2px);
+    }
+    
+    .input-group textarea {
+      resize: vertical;
+      min-height: 180px;
+      font-family: inherit;
+      line-height: 1.5;
+    }
+    
+    .file-input-container {
+      position: relative;
+      display: inline-block;
       width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
     }
-    button {
-      background: #3498db;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
+    
+    .file-input {
+      opacity: 0;
+      position: absolute;
+      z-index: -1;
+    }
+    
+    .file-input-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 15px;
+      border: 2px dashed #0ea5e9;
+      border-radius: 10px;
       cursor: pointer;
-      font-weight: bold;
+      transition: all 0.3s ease;
+      background: #f0f9ff;
     }
-    button:hover {
-      background: #2980b9;
+    
+    .file-input-label:hover {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      color: white;
+      box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
     }
+    
+    .submit-btn {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 25%, #0369a1 100%);
+      color: white;
+      padding: 18px 35px;
+      border: none;
+      border-radius: 15px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+    }
+    
+    .submit-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    .submit-btn:hover::before {
+      left: 100%;
+    }
+    
+    .submit-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 
+        0 10px 25px rgba(14, 165, 233, 0.5),
+        0 5px 10px rgba(0,0,0,0.1);
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 25%, #1e40af 100%);
+    }
+    
+    .submit-btn:active {
+      transform: translateY(-1px);
+    }
+    
+    .table-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 25px;
+      box-shadow: 
+        0 20px 40px rgba(0,0,0,0.1),
+        0 15px 12px rgba(0,0,0,0.05),
+        inset 0 1px 0 rgba(255,255,255,0.8);
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .table-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #0ea5e9 100%);
+      color: white;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .table-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(45deg, rgba(14, 165, 233, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+    }
+    
+    .table-responsive {
+      overflow-x: auto;
+    }
+    
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
-      background: #fff;
-      border-radius: 12px;
-      overflow: hidden;
     }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 12px;
+    
+    table th, table td {
+      padding: 15px;
       text-align: left;
+      border-bottom: 1px solid #e1e8ed;
     }
-    th {
-      background: #3498db;
-      color: white;
+    
+    table th {
+      background: #f8f9ff;
+      color: #2c3e50;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
     }
-    tr:nth-child(even) {
-      background: #f9f9f9;
+    
+    table tr:hover {
+      background: #f8f9ff;
     }
+    
+    .status-badge {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .status-process {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .status-completed {
+      background: #d4edda;
+      color: #155724;
+    }
+    
     .evidence-link {
-      color: #3498db;
+      color: #0ea5e9;
       text-decoration: none;
-      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+      padding: 8px 15px;
+      border-radius: 8px;
+      background: rgba(14, 165, 233, 0.1);
+      transition: all 0.3s ease;
+      border: 1px solid rgba(14, 165, 233, 0.2);
     }
+    
     .evidence-link:hover {
-      text-decoration: underline;
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(14, 165, 233, 0.4);
+    }
+    
+    .evidence-preview {
+      max-width: 60px;
+      max-height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .evidence-preview:hover {
+      transform: scale(1.1);
+    }
+    
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+      backdrop-filter: blur(5px);
+    }
+    
+    .modal-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 90%;
+      max-height: 90%;
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    
+    .modal-image {
+      max-width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: 10px;
+    }
+    
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 28px;
+      font-weight: bold;
+      color: #aaa;
+      cursor: pointer;
+      z-index: 1001;
+    }
+    
+    .modal-close:hover {
+      color: #000;
+    }
+    
+    .no-evidence {
+      color: #6c757d;
+      font-style: italic;
+    }
+    
+    .status-btn {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      margin-left: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+    }
+    
+    .status-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+      background: linear-gradient(135deg, #218838, #1cc88a);
+    }
+    
+    .status-btn:active {
+      transform: translateY(0);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #6c757d;
+    }
+    
+    .error-message {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 10px 15px;
+      border-radius: 10px;
+      margin: 10px 0;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .success-message {
+      background: #d4edda;
+      color: #155724;
+      padding: 10px 15px;
+      border-radius: 10px;
+      margin: 10px 0;
+      border: 1px solid #c3e6cb;
+    }
+    
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      h1 {
+        font-size: 2rem;
+      }
+      
+      .form-container, .table-container {
+        margin: 10px;
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Punchlist Request</h1>
+    <h1><i class="fas fa-clipboard-list"></i> Punchlist App</h1>
 
-    <form id="punchlistForm">
-      <div class="form-group">
-        <label>Requested By</label>
-        <input type="text" id="requested_by" required>
-      </div>
-      <div class="form-group">
-        <label>Date</label>
-        <input type="date" id="request_date" required>
-      </div>
-      <div class="form-group">
-        <label>Location</label>
-        <input type="text" id="location" required>
-      </div>
-      <div class="form-group">
-        <label>Category</label>
-        <select id="category" required>
-          <option value="">-- Select --</option>
-          <option>Safety</option>
-          <option>Quality</option>
-          <option>Schedule</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <textarea id="description" required></textarea>
-      </div>
-      <div class="form-group">
-        <label>Upload Evidence</label>
-        <input type="file" id="evidence_file" accept="image/*">
-      </div>
-      <button type="submit">Submit</button>
-    </form>
+    <div class="form-container">
+      <h2 class="form-title">
+        <i class="fas fa-plus-circle"></i>
+        Tambah Item Punchlist
+      </h2>
+      
+      <form id="punchlistForm">
+        <div class="input-group" style="margin-bottom: 20px;">
+          <label for="description">Deskripsi</label>
+          <textarea id="description" placeholder="Masukkan deskripsi pekerjaan&#10;&#10;Contoh:&#10;1. Requisition No. SAPKTB-CV-REQ-012 -> Deleted&#10;2. Requisition No. SAPKTB-CV-REQ-004 update total BQ (Qty & UoM)&#10;Before: Qty 358 UoM M2&#10;After: Qty 241.8 UoM Ton" rows="8" required></textarea>
+        </div>
+        
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="requester">Requester</label>
+            <input type="text" id="requester" placeholder="Nama requester" required />
+          </div>
+          
+          <div class="input-group">
+            <label for="request_date">Tanggal Request</label>
+            <input type="date" id="request_date" required />
+          </div>
+          
+          <div class="input-group">
+            <label for="assigned_to">Assigned To</label>
+            <input type="text" id="assigned_to" placeholder="Nama yang ditugaskan" required />
+          </div>
+          
+          <div class="input-group">
+            <label for="evidence">Evidence (Foto)</label>
+            <div class="file-input-container">
+              <input type="file" id="evidence" class="file-input" accept="image/*" />
+              <label for="evidence" class="file-input-label">
+                <i class="fas fa-camera"></i>
+                <span id="file-label">Pilih foto evidence</span>
+              </label>
+            </div>
+          </div>
+        </div>
 
-    <h2>Punchlist Records</h2>
-    <table id="punchlistTable">
-      <thead>
-        <tr>
-          <th>Requested By</th>
-          <th>Date</th>
-          <th>Location</th>
-          <th>Category</th>
-          <th>Description</th>
-          <th>Evidence</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+        <button type="submit" class="submit-btn">
+          <i class="fas fa-save"></i>
+          Tambah Punchlist
+        </button>
+      </form>
+    </div>
+
+    <div class="table-container">
+      <div class="table-header">
+        <i class="fas fa-list"></i>
+        <h2>Daftar Punchlist</h2>
+      </div>
+      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Deskripsi</th>
+              <th>Requester</th>
+              <th>Tanggal Request</th>
+              <th>Assigned To</th>
+              <th>Status</th>
+              <th>Evidence</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody id="punchlistTable">
+            <tr>
+              <td colspan="8" class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Memuat data...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for image preview -->
+  <div id="imageModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <img id="modalImage" class="modal-image" src="" alt="Evidence">
+    </div>
   </div>
 
   <script>
-    const { createClient } = supabase;
-    const supabaseUrl = "https://ahhmhdwukqfquwodeunc.supabase.co"; // ganti dengan Project URL
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoaG1oZHd1a3FmcXV3b2RldW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NzQxODQsImV4cCI6MjA3MTE1MDE4NH0.PlBMneWa9STztSgb3VeqlTP6gBvFyW-wc43uFAQmtdA"; // ganti dengan anon public key
-    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+    const SUPABASE_URL = "https://ahhmhdwukqfquwodeunc.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoaG1oZHd1a3FmcXV3b2RldW5jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU1NzQxODQsImV4cCI6MjA3MTE1MDE4NH0.PlBMneWa9STztSgb3VeqlTP6gBvFyW-wc43uFAQmtdA";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const form = document.getElementById("punchlistForm");
-    const tableBody = document.querySelector("#punchlistTable tbody");
+    const tableBody = document.getElementById("punchlistTable");
+    const fileInput = document.getElementById("evidence");
+    const fileLabel = document.getElementById("file-label");
 
-    async function loadData() {
-      const { data, error } = await supabaseClient.from("punchlist").select("*").order("created_at", { ascending: false });
-      if (error) {
-        console.error("Load error:", error);
-        return;
+    // Update file label when file is selected
+    fileInput.addEventListener('change', function(e) {
+      if (e.target.files.length > 0) {
+        fileLabel.textContent = e.target.files[0].name;
+      } else {
+        fileLabel.textContent = "Pilih foto evidence";
       }
-      tableBody.innerHTML = "";
-      data.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${row.requested_by}</td>
-          <td>${row.request_date}</td>
-          <td>${row.location}</td>
-          <td>${row.category}</td>
-          <td>${row.description}</td>
-          <td>${row.evidence_url ? `<a class="evidence-link" href="${row.evidence_url}" target="_blank">View</a>` : "-"}</td>
-        `;
-        tableBody.appendChild(tr);
+    });
+
+    // Show message function
+    function showMessage(message, type = 'success') {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = type === 'success' ? 'success-message' : 'error-message';
+      messageDiv.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+      
+      form.insertAdjacentElement('afterend', messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 5000);
+    }
+
+    // Format date function
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     }
 
+    // Create storage bucket if it doesn't exist
+    async function ensureBucketExists() {
+      try {
+        const { data: buckets, error: listError } = await supabaseClient.storage.listBuckets();
+        
+        if (listError) {
+          console.warn("Cannot list buckets:", listError.message);
+          return false;
+        }
+
+        const evidenceBucket = buckets.find(bucket => bucket.name === 'evidence');
+        
+        if (!evidenceBucket) {
+          const { error: createError } = await supabaseClient.storage.createBucket('evidence', {
+            public: true,
+            fileSizeLimit: 5242880, // 5MB
+            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+          });
+          
+          if (createError) {
+            console.warn("Cannot create bucket:", createError.message);
+            return false;
+          }
+        }
+        
+        return true;
+      } catch (error) {
+        console.warn("Bucket operation failed:", error);
+        return false;
+      }
+    }
+
+    // Load punchlists
+    async function loadPunchlists() {
+      try {
+        const { data, error } = await supabaseClient
+          .from("punchlist")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          throw error;
+        }
+
+        tableBody.innerHTML = "";
+        
+        if (data.length === 0) {
+          tableBody.innerHTML = `
+            <tr>
+              <td colspan="8" style="text-align: center; color: #6c757d; padding: 40px;">
+                <i class="fas fa-inbox"></i><br>
+                Belum ada data punchlist
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        data.forEach(item => {
+          const statusClass = item.status === 'completed' ? 'status-completed' : 'status-process';
+          
+          let evidenceCell;
+          if (item.evidence_url) {
+            evidenceCell = `
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <img src="${item.evidence_url}" class="evidence-preview" alt="Evidence preview" onclick="openImageModal('${item.evidence_url}')" />
+                <a class="evidence-link" href="${item.evidence_url}" target="_blank">
+                  <i class="fas fa-external-link-alt"></i> Buka
+                </a>
+              </div>
+            `;
+          } else {
+            evidenceCell = `<span class="no-evidence"><i class="fas fa-image-slash"></i> Tidak ada</span>`;
+          }
+
+          const row = `<tr>
+            <td><span style="font-weight: 600; color: #0ea5e9; text-shadow: 0 0 10px rgba(14, 165, 233, 0.3);">#${item.id}</span></td>
+            <td><strong style="white-space: pre-line;">${item.description}</strong></td>
+            <td><i class="fas fa-user"></i> ${item.requester}</td>
+            <td><i class="fas fa-calendar"></i> ${item.request_date || '-'}</td>
+            <td><i class="fas fa-user-check"></i> ${item.assigned_to}</td>
+            <td>
+              <span class="status-badge ${statusClass}">
+                <i class="fas fa-${item.status === 'completed' ? 'check' : 'clock'}"></i>
+                ${item.status}
+              </span>
+              ${item.status !== 'completed' ? `
+                <button class="status-btn" onclick="updateStatus(${item.id})" title="Tandai sebagai selesai">
+                  <i class="fas fa-check"></i>
+                </button>
+              ` : ''}
+            </td>
+            <td>${evidenceCell}</td>
+            <td><i class="fas fa-clock"></i> ${formatDate(item.created_at)}</td>
+          </tr>`;
+          tableBody.innerHTML += row;
+        });
+      } catch (error) {
+        console.error("Load error:", error.message);
+        tableBody.innerHTML = `
+          <tr>
+            <td colspan="8" class="error-message" style="text-align: center;">
+              <i class="fas fa-exclamation-triangle"></i> 
+              Error memuat data: ${error.message}
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    // Submit form
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const requested_by = document.getElementById("requested_by").value;
-      const request_date = document.getElementById("request_date").value;
-      const location = document.getElementById("location").value;
-      const category = document.getElementById("category").value;
-      const description = document.getElementById("description").value;
-      const fileInput = document.getElementById("evidence_file");
-      let evidence_url = null;
+      const submitBtn = e.target.querySelector('.submit-btn');
+      const originalHTML = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+      submitBtn.disabled = true;
 
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const filePath = `${Date.now()}_${file.name}`;
-        const { data, error } = await supabaseClient.storage.from("evidence").upload(filePath, file);
-        if (error) {
-          alert("Upload failed: " + error.message);
+      try {
+        const description = document.getElementById("description").value;
+        const requester = document.getElementById("requester").value;
+        const request_date = document.getElementById("request_date").value;
+        const assigned_to = document.getElementById("assigned_to").value;
+        const file = document.getElementById("evidence").files[0];
+
+        let evidenceUrl = null;
+
+        if (file) {
+          // Ensure bucket exists before uploading
+          await ensureBucketExists();
+          
+          const filePath = `punchlist/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+          
+          const { error: uploadError } = await supabaseClient.storage
+            .from("evidence")
+            .upload(filePath, file);
+
+          if (uploadError) {
+            throw new Error("Upload gagal: " + uploadError.message);
+          }
+
+          const { data: publicUrlData } = supabaseClient.storage
+            .from("evidence")
+            .getPublicUrl(filePath);
+
+          evidenceUrl = publicUrlData.publicUrl;
+        }
+
+        const { error: insertError } = await supabaseClient
+          .from("punchlist")
+          .insert([{
+            description,
+            requester,
+            request_date,
+            assigned_to,
+            status: "on process",
+            evidence_url: evidenceUrl
+          }]);
+
+        if (insertError) {
+          throw insertError;
+        }
+
+        form.reset();
+        fileLabel.textContent = "Pilih foto evidence";
+        showMessage("Punchlist berhasil ditambahkan!");
+        loadPunchlists();
+
+      } catch (error) {
+        console.error("Submit error:", error);
+        showMessage(error.message, 'error');
+      } finally {
+        submitBtn.innerHTML = originalHTML;
+        submitBtn.disabled = false;
+      }
+    });
+
+    // Modal functionality
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modalClose = document.querySelector('.modal-close');
+
+    function openImageModal(imageUrl) {
+      modalImage.src = imageUrl;
+      modal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeImageModal() {
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+
+    modalClose.addEventListener('click', closeImageModal);
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeImageModal();
+      }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && modal.style.display === 'block') {
+        closeImageModal();
+      }
+    });
+
+    // Enhanced file upload with better feedback
+    fileInput.addEventListener('change', function(e) {
+      if (e.target.files.length > 0) {
+        const file = e.target.files[0];
+        const fileSize = (file.size / 1024 / 1024).toFixed(2); // MB
+        
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+          showMessage('Ukuran file terlalu besar! Maksimal 5MB.', 'error');
+          fileInput.value = '';
+          fileLabel.textContent = "Pilih foto evidence";
           return;
         }
-        evidence_url = `${supabaseUrl}/storage/v1/object/public/evidence/${filePath}`;
+        
+        if (!file.type.startsWith('image/')) {
+          showMessage('File harus berupa gambar!', 'error');
+          fileInput.value = '';
+          fileLabel.textContent = "Pilih foto evidence";
+          return;
+        }
+        
+        fileLabel.innerHTML = `<i class="fas fa-check-circle" style="color: #28a745;"></i> ${file.name} (${fileSize}MB)`;
+      } else {
+        fileLabel.innerHTML = `<i class="fas fa-camera"></i> Pilih foto evidence`;
       }
+    });
 
-      const { error: insertError } = await supabaseClient.from("punchlist").insert([
-        { requested_by, request_date, location, category, description, evidence_url }
-      ]);
-
-      if (insertError) {
-        alert("Insert failed: " + insertError.message);
-        console.error(insertError);
+    // Update status function
+    async function updateStatus(id) {
+      if (!confirm('Apakah Anda yakin ingin menandai item ini sebagai selesai?')) {
         return;
       }
 
-      form.reset();
-      loadData();
-    });
+      try {
+        const { error } = await supabaseClient
+          .from("punchlist")
+          .update({ status: "completed" })
+          .eq("id", id);
 
-    loadData();
+        if (error) {
+          throw error;
+        }
+
+        showMessage("Status berhasil diubah menjadi completed!");
+        loadPunchlists();
+
+      } catch (error) {
+        console.error("Update status error:", error);
+        showMessage("Error mengubah status: " + error.message, 'error');
+      }
+    }
+
+    // Initialize
+    loadPunchlists();
   </script>
 </body>
 </html>
